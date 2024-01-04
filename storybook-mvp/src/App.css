@@ -33,24 +33,47 @@
   opacity: 1;
 }
 
-main {
-  bottom: 0;
-  left: 0;
+.App-frames {
+  align-items: baseline;
+  display: flex;
+  gap: 1rem;
   overflow: auto;
-  position: absolute;
-  right: 0;
-  top: 50px;
+  padding: 1rem;
 }
 
 .frame {
-  margin: 1rem;
-  max-width: calc(50% - 2rem);
-  min-height: 200px;
-  position: relative;
+  background-color: white;
+  border: 1px solid silver;
+  border-radius: 4px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+  flex: 0 0 auto;
+  margin: 0;
+  min-width: 200px;
+  padding: 0.5rem;
 }
 
-.frame:focus-within {
-  background-color: aliceblue;
+.frame.selected {
+  border-color: dodgerblue;
+}
+
+.frame.branch {
+  border-left: 3px solid green;
+}
+
+.frame textarea {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  font-family: monospace;
+  font-size: 1em;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0.5rem;
+  resize: vertical;
+  width: 100%;
+}
+
+.frame textarea:focus {
   outline: none;
 }
 
@@ -58,45 +81,12 @@ main {
   background-color: transparent;
   border: none;
   cursor: pointer;
-  height: 100%;
-  left: 0;
-  opacity: 0.7;
-  position: absolute;
-  top: 0;
-  width: 100%;
-  z-index: 1;
+  float: right;
+  font-size: 0.75em;
+  opacity: 0.5;
+  transition: opacity 0.2s ease-out;
 }
 
-.frame textarea {
-  background-color: transparent;
-  border: none;
-  bottom: 0;
-  border-right: 1px solid gray;
-  border-top: 1px solid gray;
-  border-left: 1px solid darkgray;
-  border-radius: 0;
-  font-family: monospace;
-  font-size: 1em;
-  line-height: 1.5;
-  margin: 0;
-  padding: 0.5rem;
-  resize: vertical;
-  top: 0;
-  width: 100%;
-  z-index: 2;
-}
-
-.selected {
-  animation: pulse 1s infinite;
-  background-color: lavenderblush;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(238, 130, 238, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 10px rgba(238, 130, 238, 0);
-  }
+.frame button:hover {
+  opacity: 1;
 }
