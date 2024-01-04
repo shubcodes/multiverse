@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-interface Frame {
+interface Frame extends Record<string, unknown> {
   id: number;
   text: string;
   branchId?: number;
@@ -24,6 +24,27 @@ function App() {
     );
   };
 
+  const branchFrame = (parentFrameId: number, newParentText: string) => {
+    const parentFrameIdx = frames.findIndex((frame) => frame.id === parentFrameId);
+    if (parentFrameIdx !== -1) {
+      const branchedFrames: Frame[] = [];
+
+      const newFrameId = Date.now();
+      const newParentFrame = { id: newFrameId, text: newParentText, branchId: branchIdCounter };
+      branchedFrames.push(newParentFrame);
+
+      const remainingFrames = frames.splice(parentFrameIdx + 1);
+      branchedFrames.push(...remainingFrames);
+
+      setFrames(() => {
+        setBranchIdCounter((prevCount) => prevCount + 1);
+        return branchedFrames;
+      });
+
+      setSelectedFrameId(newFrameId);
+    }
+  };
+
   const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -32,42 +53,11 @@ function App() {
       if (text) {
         if (selectedFrameId) {
           editFrame(selectedFrameId, text);
+          branchFrame(selectedFrameId, text);
         } else {
           addFrame(text);
         }
       }
-    }
-  };
-
-  const mergeBranches = (originalBranchId?: number, mergedBranchId?: number) => {
-    setFrames((prevFrames) => {
-      const originalBranch = prevFrames.filter((frame) => frame.branchId === originalBranchId);
-      const mergedBranch = prevFrames.filter((frame) => frame.branchId === mergedBranchId);
-      return [...originalBranch, ...mergedBranch];
-    });
-  };
-
-  const branchFromFrame = (id: number) => {
-    const newBranchId = branchIdCounter;
-    setBranchIdCounter((prevCount) => prevCount + 1);
-    const originalFrame = frames.find((frame) => frame.id === id);
-    if (originalFrame) {
-      const clonedFrame = structuredClone(originalFrame);
-      clonedFrame.branchId = newBranchId;
-      clonedFrame.text += '\n\n*** Branch starts ***';
-      addFrame(clonedFrame.text, newBranchId);
-      setSelectedFrameId(Date.now());
-    }
-  };
-
-  const handleMergeButtonClick = () => {
-    const originalBranch = frames.filter((frame) => frame.branchId === undefined);
-    const newBranch = frames.filter((frame) => frame.branchId !== undefined)[0];
-    if (originalBranch.length > 0 && newBranch) {
-      mergeBranches(undefined, newBranch.branchId);
-      branchFromFrame(originalBranch[originalBranch.length - 1].id);
-      addFrame(newBranch.text, newBranch.branchId);
-      setSelectedFrameId(Date.now());
     }
   };
 
@@ -78,27 +68,23 @@ function App() {
         <button type="button" onClick={() => addFrame('Untitled Frame')}>
           New Frame
         </button>
-        <button type="button" onClick={handleMergeButtonClick} disabled={!frames.some((frame) => frame.branchId !== undefined)}>
-          Merge Branches
-        </button>
       </header>
-      <main className="App-frames">
-        {frames.map((frame) => (
-          <div
-            key={frame.id}
-            className={'frame ' + (selectedFrameId === frame.id ? 'selected' : '') + (frame.branchId ? ' branch' : '')}
-            onClick={() => setSelectedFrameId(frame.id)}
-          >
-            <button type="button" onClick={() => branchFromFrame(frame.id)} disabled={frame.branchId ? false : true}>
-              Branch
+      <main>
+        <nav>
+          {frames.map((frame) => (
+            <button key={frame.id} onClick={() => setSelectedFrameId(frame.id)}>
+              Frame {frame.id}
             </button>
+          ))}
+        </nav>
+        {selectedFrameId != null && (
+          <div>
             <textarea
-              value={frame.text}
-              onChange={(e) => editFrame(frame.id, e.target.value)}
-              onKeyPress={handleKeyPress}
-            ></textarea>
+              value={frames.find((frame) => frame.id === selectedFrameId)?.text ?? ''}
+              onKeyDown={handleKeyPress}
+            />
           </div>
-        ))}
+        )}
       </main>
     </div>
   );
