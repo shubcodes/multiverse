@@ -3,45 +3,38 @@ import React, { useState } from 'react';
 interface Frame extends Record<string, unknown> {
   id: number;
   text: string;
-  branchId?: number;
+  branchName?: string;
 }
 
-const initialFrames: Frame[] = [{ id: 1, text: 'Initial Frame' }];
+const initialFrames: Frame[] = [{ id: 1, text: 'Initial Frame', branchName: 'master' }];
 
 function App() {
   const [frames, setFrames] = useState<Frame[]>(initialFrames);
   const [selectedFrameId, setSelectedFrameId] = useState<number | null>(initialFrames[0].id);
-  const [branchIdCounter, setBranchIdCounter] = useState<number>(1);
 
-  const addFrame = (text: string, branchId?: number) => {
-    setFrames((prevFrames) => [...prevFrames, { id: Date.now(), text, branchId }]);
-    setSelectedFrameId(Date.now());
+  const addFrame = (text: string, branchName?: string) => {
+    const newFrame: Frame = { id: Date.now(), text, branchName };
+    setFrames((prevFrames) => [...prevFrames, newFrame]);
+    setSelectedFrameId(newFrame.id);
   };
 
-  const editFrame = (id: number, text: string) => {
-    setFrames((prevFrames) =>
-      prevFrames.map((frame) => (frame.id === id ? { id, text, branchId: frame.branchId } : frame))
-    );
-  };
-
-  const branchFrame = (parentFrameId: number, newParentText: string) => {
+  const branchFrame = (parentFrameId: number, newBranchName: string) => {
     const parentFrameIdx = frames.findIndex((frame) => frame.id === parentFrameId);
+
     if (parentFrameIdx !== -1) {
-      const branchedFrames: Frame[] = [];
+      const newBranchFrames: Frame[] = [];
+      const parentFrame = frames[parentFrameIdx];
+      const newBranchHead = { ...parentFrame, branchName: newBranchName, id: Date.now() };
+      newBranchFrames.push(newBranchHead);
 
-      const newFrameId = Date.now();
-      const newParentFrame = { id: newFrameId, text: newParentText, branchId: branchIdCounter };
-      branchedFrames.push(newParentFrame);
+      const childFrameIdx = parentFrameIdx + 1;
+      if (childFrameIdx < frames.length) {
+        const remaningChildFrames = frames.slice(childFrameIdx);
+        newBranchFrames.push(...remaningChildFrames);
+      }
 
-      const remainingFrames = frames.splice(parentFrameIdx + 1);
-      branchedFrames.push(...remainingFrames);
-
-      setFrames(() => {
-        setBranchIdCounter((prevCount) => prevCount + 1);
-        return branchedFrames;
-      });
-
-      setSelectedFrameId(newFrameId);
+      setFrames(() => [...frames.slice(0, parentFrameIdx), ...newBranchFrames]);
+      setSelectedFrameId(newBranchHead.id);
     }
   };
 
@@ -52,20 +45,31 @@ function App() {
       const text = target.value;
       if (text) {
         if (selectedFrameId) {
-          editFrame(selectedFrameId, text);
-          branchFrame(selectedFrameId, text);
+          const frameToEdit = frames.find((frame) => frame.id === selectedFrameId);
+          if (frameToEdit?.branchName === 'master') {
+            addFrame(text);
+          } else {
+            editFrame(selectedFrameId, text, frameToEdit?.branchName);
+          }
+          branchFrame(selectedFrameId, frameToEdit?.branchName ?? 'unknown');
         } else {
-          addFrame(text);
+          addFrame(text, 'master');
         }
       }
     }
+  };
+
+  const editFrame = (id: number, text: string, branchName?: string) => {
+    setFrames((prevFrames) =>
+      prevFrames.map((frame) => (frame.id === id ? { ...frame, text, branchName } : frame))
+    );
   };
 
   return (
     <div className="App">
       <header className="App-header">
         <h1>Multiverse Storyboard</h1>
-        <button type="button" onClick={() => addFrame('Untitled Frame')}>
+        <button type="button" onClick={() => addFrame('Untitled Frame', 'master')}>
           New Frame
         </button>
       </header>
@@ -73,14 +77,21 @@ function App() {
         <nav>
           {frames.map((frame) => (
             <button key={frame.id} onClick={() => setSelectedFrameId(frame.id)}>
-              Frame {frame.id}
+              Frame {frame.id}{' '}
+              {frame.branchName && (
+                <span style={{ color: 'darkgray', fontSize: 'smaller' }}>
+                  ({frame.branchName})
+                </span>
+              )}
             </button>
           ))}
         </nav>
         {selectedFrameId != null && (
           <div>
             <textarea
-              value={frames.find((frame) => frame.id === selectedFrameId)?.text ?? ''}
+              value={
+                frames.find((frame) => frame.id === selectedFrameId)?.text ?? ''
+              }
               onKeyDown={handleKeyPress}
             />
           </div>
